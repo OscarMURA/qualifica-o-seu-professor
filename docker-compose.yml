@@ -26,20 +26,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Opcional: Agregar el servicio de la API
-  # api:
-  #   build: .
-  #   container_name: qualifica-api
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     mongodb:
-  #       condition: service_healthy
-  #   networks:
-  #     - qualifica-network
 
 volumes:
   mongodb-data:
