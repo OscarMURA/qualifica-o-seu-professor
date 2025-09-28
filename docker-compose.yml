@@ -10,7 +10,7 @@ services:
       - mongodb-data:/data/db
       - mongodb-log:/var/log/mongodb
     env_file:
-      - .env.db
+      - .github/.env.db
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
