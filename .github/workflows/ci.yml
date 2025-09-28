@@ -13,9 +13,9 @@ jobs:
 
     env:
       NODE_VERSION: '20.x'
-      # Primero Secrets, luego Vars, finalmente defaults seguros para CI local
+      # Primero Secrets (incluye fallback a nombre mal tipeado), luego Vars, luego defaults
       MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME || vars.MONGO_INITDB_ROOT_USERNAME || 'qualifica' }}
-      MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD || vars.MONGO_INITDB_ROOT_PASSWORD || 'qualifica' }}
+      MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD || secrets.MONGO_INITDB_ROOT_PASSWOD || vars.MONGO_INITDB_ROOT_PASSWORD || 'qualifica' }}
       MONGO_INITDB_DATABASE:       ${{ secrets.MONGO_INITDB_DATABASE       || vars.MONGO_INITDB_DATABASE       || 'qualifica-professor' }}
       # Puerto de la app
       PORT: 3000
@@ -46,6 +46,13 @@ jobs:
           fi
           DB_NAME=${MONGO_INITDB_DATABASE:-qualifica-professor}
           echo "MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${DB_NAME}?authSource=admin" >> $GITHUB_ENV
+
+      - name: Create .env.db for Docker Compose
+        run: |
+          printf "MONGO_INITDB_ROOT_USERNAME=%s\n" "${MONGO_INITDB_ROOT_USERNAME}" > .env.db
+          printf "MONGO_INITDB_ROOT_PASSWORD=%s\n" "${MONGO_INITDB_ROOT_PASSWORD}" >> .env.db
+          printf "MONGO_INITDB_DATABASE=%s\n" "${MONGO_INITDB_DATABASE}" >> .env.db
+          echo "Generado .env.db con credenciales para Docker Compose"
 
       - name: Start MongoDB with Docker Compose
         run: |
