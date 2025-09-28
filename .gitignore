@@ -6,7 +6,7 @@ dist/
 .env.test.local
 .env.production.local
 .idea
-.github/.env.db
+.env.db
 .vscode/
 .DS_Store
 npm-debug.log*
