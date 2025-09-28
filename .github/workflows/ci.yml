@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-smoke:
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_VERSION: '20.x'
+      # Credenciales de Mongo desde GitHub Variables (Settings > Variables > Actions)
+      MONGO_INITDB_ROOT_USERNAME: ${{ vars.MONGO_INITDB_ROOT_USERNAME }}
+      MONGO_INITDB_ROOT_PASSWORD: ${{ vars.MONGO_INITDB_ROOT_PASSWORD }}
+      # Nombre de BD opcional desde Variables (fallback a 'qualifica-professor')
+      MONGO_INITDB_DATABASE: ${{ vars.MONGO_INITDB_DATABASE || 'qualifica-professor' }}
+      # Puerto de la app
+      PORT: 3000
+      # JWT para la app (valor simple para CI)
+      JWT_SECRET: ci-secret
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Compute MONGODB_URI
+        run: |
+          if [ -z "${MONGO_INITDB_ROOT_USERNAME}" ] || [ -z "${MONGO_INITDB_ROOT_PASSWORD}" ]; then
+            echo "GitHub Variables MONGO_INITDB_ROOT_USERNAME/MONGO_INITDB_ROOT_PASSWORD no definidas" >&2
+            exit 1
+          fi
+          DB_NAME=${MONGO_INITDB_DATABASE:-qualifica-professor}
+          echo "MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${DB_NAME}?authSource=admin" >> $GITHUB_ENV
+
+      - name: Start MongoDB with Docker Compose
+        run: |
+          docker compose version
+          docker compose up -d --quiet-pull --wait
+
+      - name: Show Docker status
+        run: |
+          docker ps -a
+          docker compose ps
+
+      - name: Run tests (pass even if none)
+        run: npm test
+
+      - name: Start application (background)
+        run: |
+          node dist/server.js &
+          echo $! > app.pid
+
+      - name: Smoke test /api/health
+        run: |
+          echo "Esperando a que la app responda en http://localhost:${PORT}/api/health ..."
+          for i in $(seq 1 30); do
+            if curl -fsS "http://localhost:${PORT}/api/health" -m 5; then
+              echo "Smoke test OK"; break
+            fi
+            echo "Reintento $i/30..."; sleep 2
+          done
+          # Validar contenido esperado "ok": true
+          body=$(curl -fsS "http://localhost:${PORT}/api/health")
+          echo "Respuesta: $body"
+          echo "$body" | grep -q '"ok"\s*:\s*true' || { echo "Smoke test falló: respuesta inesperada" >&2; exit 1; }
+
+      - name: App logs on failure
+        if: failure()
+        run: |
+          echo "Mostrando últimos logs de la app si están disponibles" || true
+          if [ -f app.pid ]; then
+            pid=$(cat app.pid)
+            echo "App PID: $pid"
+            # No hay logs separados; los logs ya aparecen en consola. Se intenta mostrar conexiones.
+            ss -lntp || true
+          fi
+          echo "Logs de Docker Compose:" || true
+          docker compose logs --tail=200 || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+          fi
+          docker compose down -v || true

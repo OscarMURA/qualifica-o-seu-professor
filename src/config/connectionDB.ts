@@ -5,10 +5,12 @@ dotenv.config();
 
 export const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || "", {
-      dbName: 'qualifica-professor'
+    const uri = process.env.MONGODB_URI || "";
+    const dbName = process.env.MONGO_INITDB_DATABASE || process.env.DB_NAME || 'qualifica-professor';
+    await mongoose.connect(uri, {
+      dbName
     });
-    console.log("Connected to MongoDB");
+    console.log(`Connected to MongoDB (db: ${dbName})`);
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
     process.exit(1);

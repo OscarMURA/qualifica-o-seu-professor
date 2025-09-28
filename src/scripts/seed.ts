@@ -23,8 +23,9 @@ async function main() {
     if (!Number.isNaN(seedNum)) faker.seed(seedNum);
   }
 
-  await mongoose.connect(uri, { dbName: 'qualifica-professor' });
-  console.log('SEED: Conectado a MongoDB');
+  const dbName = process.env.MONGO_INITDB_DATABASE || process.env.DB_NAME || 'qualifica-professor';
+  await mongoose.connect(uri, { dbName });
+  console.log(`SEED: Conectado a MongoDB (db: ${dbName})`);
 
   const reset = process.env.SEED_RESET !== 'false';
   const counts = {
