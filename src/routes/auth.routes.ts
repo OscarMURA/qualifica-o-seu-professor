@@ -8,8 +8,8 @@ import { loginSchema, registerSchema } from './schemas/auth.schema';
 const r = Router();
 
 // Solo superadmin registra nuevos usuarios
-r.post('/register', requireAuth, requireRole('superadmin'), registerCtrl);
-r.post('/login', loginCtrl);
+r.post('/register', requireAuth, requireRole('superadmin'), validate(registerSchema), registerCtrl);
+r.post('/login', validate(loginSchema), loginCtrl);
 r.get('/me', requireAuth, meCtrl);
 
 export default r;
