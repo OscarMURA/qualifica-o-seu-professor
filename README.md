@@ -96,7 +96,6 @@ al interactuar con las rutas protegidas.
 • Simular escenarios de uso real, incluyendo la creación de relaciones entre
 módulos y la verificación de permisos basados en roles.
 
-
 ## Entrega y Presentación:
 • El código fuente debe estar en un repositorio de GitHub, con un README claro
 sobre cómo configurar y ejecutar el proyecto, además de una descripción de la
@@ -143,3 +142,12 @@ detallada.
 
 • Pruebas (20%): Cobertura en las pruebas del 80%, probar los escenarios de
 éxito y de error (entradas inválidas).
+
+
+---
+
+## Guía del Seeder de datos
+
+Para una guía exhaustiva del seeder (requisitos, variables, ejecución, troubleshooting y buenas prácticas), consulta:
+
+- `docs/SEEDER.md`
