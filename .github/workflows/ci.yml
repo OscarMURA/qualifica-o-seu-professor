@@ -13,11 +13,10 @@ jobs:
 
     env:
       NODE_VERSION: '20.x'
-      # Credenciales de Mongo desde GitHub Variables (Settings > Variables > Actions)
-      MONGO_INITDB_ROOT_USERNAME: ${{ vars.MONGO_INITDB_ROOT_USERNAME }}
-      MONGO_INITDB_ROOT_PASSWORD: ${{ vars.MONGO_INITDB_ROOT_PASSWORD }}
-      # Nombre de BD opcional desde Variables (fallback a 'qualifica-professor')
-      MONGO_INITDB_DATABASE: ${{ vars.MONGO_INITDB_DATABASE || 'qualifica-professor' }}
+      # Primero Secrets, luego Vars, finalmente defaults seguros para CI local
+      MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME || vars.MONGO_INITDB_ROOT_USERNAME || 'qualifica' }}
+      MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD || vars.MONGO_INITDB_ROOT_PASSWORD || 'qualifica' }}
+      MONGO_INITDB_DATABASE:       ${{ secrets.MONGO_INITDB_DATABASE       || vars.MONGO_INITDB_DATABASE       || 'qualifica-professor' }}
       # Puerto de la app
       PORT: 3000
       # JWT para la app (valor simple para CI)
@@ -42,7 +41,7 @@ jobs:
       - name: Compute MONGODB_URI
         run: |
           if [ -z "${MONGO_INITDB_ROOT_USERNAME}" ] || [ -z "${MONGO_INITDB_ROOT_PASSWORD}" ]; then
-            echo "GitHub Variables MONGO_INITDB_ROOT_USERNAME/MONGO_INITDB_ROOT_PASSWORD no definidas" >&2
+            echo "Variables de credenciales de Mongo no definidas. Configure Secrets o Variables: MONGO_INITDB_ROOT_USERNAME / MONGO_INITDB_ROOT_PASSWORD" >&2
             exit 1
           fi
           DB_NAME=${MONGO_INITDB_DATABASE:-qualifica-professor}
@@ -87,7 +86,6 @@ jobs:
           if [ -f app.pid ]; then
             pid=$(cat app.pid)
             echo "App PID: $pid"
-            # No hay logs separados; los logs ya aparecen en consola. Se intenta mostrar conexiones.
             ss -lntp || true
           fi
           echo "Logs de Docker Compose:" || true
