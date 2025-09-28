@@ -9,7 +9,8 @@
     "build": "tsc -p .",
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "seed": "npm run build && node dist/scripts/seed.js"
   },
   "repository": {
     "type": "git",
@@ -32,7 +33,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.2",
     "morgan": "^1.10.1",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "@faker-js/faker": "^9.0.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
