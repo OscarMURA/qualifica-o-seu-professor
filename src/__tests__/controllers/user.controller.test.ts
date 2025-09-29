@@ -65,4 +65,61 @@ describe('User Controller', () => {
       expect(resOk.json).toHaveBeenCalledWith({ id: 'u2', name: 'New' });
     }
   });
+
+  // --- additional tests merged from user.controller.extra.test.ts ---
+  test('listUsers - no filters returns paginated response', async () => {
+    const mockCount: any = jest.fn();
+    mockCount.mockResolvedValue(2);
+
+    const lm: any = jest.fn(); lm.mockResolvedValue([{ id: 'u1' }]);
+    const skip: any = jest.fn(() => ({ limit: lm }));
+    const sort: any = jest.fn(() => ({ skip }));
+    const select: any = jest.fn(() => ({ sort }));
+    const find: any = jest.fn(() => ({ select }));
+
+    jest.doMock('../../models/user.model', () => ({ UserModel: { countDocuments: mockCount, find } }));
+    const { listUsers } = await import('../../controllers/user.controller');
+
+    const req: any = { query: {} };
+    const res: any = { json: jest.fn() };
+    await listUsers(req, res);
+
+    expect(mockCount).toHaveBeenCalledWith({});
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  test('listUsers - with q and role filters', async () => {
+    const mockCount: any = jest.fn();
+    mockCount.mockResolvedValue(1);
+
+    const lm: any = jest.fn(); lm.mockResolvedValue([{ id: 'u2' }]);
+    const skip: any = jest.fn(() => ({ limit: lm }));
+    const sort: any = jest.fn(() => ({ skip }));
+    const select: any = jest.fn(() => ({ sort }));
+    const find: any = jest.fn((filter: any) => ({ select }));
+
+    jest.doMock('../../models/user.model', () => ({ UserModel: { countDocuments: mockCount, find } }));
+    const { listUsers } = await import('../../controllers/user.controller');
+
+    const req: any = { query: { q: 'x', role: 'superadmin', page: '1', limit: '10' } };
+    const res: any = { json: jest.fn() };
+    await listUsers(req, res);
+
+    expect(mockCount).toHaveBeenCalledWith(expect.any(Object));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: expect.any(Array), total: 1 }));
+  });
+
+  test('deleteUser - 404 and 204', async () => {
+    const mockFindByIdAndDelete: any = jest.fn((id: string) => id === 'ok' ? { id: 'ok' } : null);
+    jest.doMock('../../models/user.model', () => ({ UserModel: { findByIdAndDelete: mockFindByIdAndDelete } }));
+    const { deleteUser } = await import('../../controllers/user.controller');
+
+    const res404: any = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    await deleteUser({ params: { id: 'no' } } as any, res404 as any);
+    expect(res404.status).toHaveBeenCalledWith(404);
+
+    const resOk: any = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+    await deleteUser({ params: { id: 'ok' } } as any, resOk as any);
+    expect(resOk.status).toHaveBeenCalledWith(204);
+  });
 });
