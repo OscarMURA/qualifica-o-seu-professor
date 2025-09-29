@@ -43,7 +43,4 @@ UserSchema.methods.comparePassword = function (plain: string) {
   return bcrypt.compare(plain, this.passwordHash);
 };
 
-// (Opcional) índice compuesto para búsquedas frecuentes
-UserSchema.index({ email: 1 });
-
 export const UserModel = model<IUser>('User', UserSchema);
