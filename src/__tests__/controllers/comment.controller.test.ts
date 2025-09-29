@@ -45,9 +45,11 @@ describe('Comment Controller', () => {
   });
 
   test('getComment - 404 when not found and 200 when found', async () => {
-    const mockFindById: any = jest.fn();
-    mockFindById.mockResolvedValueOnce(null);
-    mockFindById.mockResolvedValueOnce({ id: 'c2', content: 'found' });
+    const mockFindById: any = jest.fn((id: string) => {
+      const pop: any = jest.fn();
+      pop.mockResolvedValue(id === 'missing' ? null : { id: 'c2', content: 'found' });
+      return { populate: pop };
+    });
     jest.doMock('../../models/comment.model', () => ({ CommentModel: { findById: mockFindById } }));
 
     const { getComment } = await import('../../controllers/comment.controller');
@@ -74,10 +76,12 @@ describe('Comment Controller', () => {
     fakeComment.populate.mockResolvedValue({ id: 'c3', content: 'edited' });
     fakeComment.deleteOne.mockResolvedValue(undefined);
 
-    const mockFindById: any = jest.fn();
-    mockFindById.mockResolvedValueOnce(null); // for 404
-    mockFindById.mockResolvedValueOnce({ ...fakeComment, user: { toString: () => 'other' } }); // for forbidden
-    mockFindById.mockResolvedValueOnce(fakeComment); // for success
+    const mockFindById: any = jest.fn((id: string) => {
+      if (id === 'no') return null;
+      if (id === 'forbid') return { ...fakeComment, user: { toString: () => 'other' } };
+      if (id === 'ok') return fakeComment;
+      return null;
+    });
 
     jest.doMock('../../models/comment.model', () => ({ CommentModel: { findById: mockFindById } }));
 
@@ -96,10 +100,12 @@ describe('Comment Controller', () => {
     expect(resOk.json).toHaveBeenCalledWith({ id: 'c3', content: 'edited' });
 
     // delete 404 and forbidden and success
-    const mockFindByIdForDelete: any = jest.fn();
-    mockFindByIdForDelete.mockResolvedValueOnce(null);
-    mockFindByIdForDelete.mockResolvedValueOnce({ ...fakeComment, user: { toString: () => 'other' } });
-    mockFindByIdForDelete.mockResolvedValueOnce(fakeComment);
+    const mockFindByIdForDelete: any = jest.fn((id: string) => {
+      if (id === 'no') return null;
+      if (id === 'forbid') return { ...fakeComment, user: { toString: () => 'other' } };
+      if (id === 'ok') return fakeComment;
+      return null;
+    });
 
     jest.doMock('../../models/comment.model', () => ({ CommentModel: { findById: mockFindByIdForDelete } }));
     const { deleteComment: del } = await import('../../controllers/comment.controller');
