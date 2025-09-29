@@ -1,5 +1,8 @@
+import dotenv from 'dotenv';
 import app from './app';
 import { connectDB } from './config/connectionDB';
+
+dotenv.config();
 
 (async () => {
   await connectDB();
