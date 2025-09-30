@@ -7,7 +7,12 @@ dotenv.config();
 export async function startServer(port?: number) {
   await connectDB();
   const PORT = port || process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`API up on :${PORT}`));
+  const HOST = process.env.HOST || '0.0.0.0';
+  
+  app.listen(PORT, HOST, () => {
+    console.log(`API up on ${HOST}:${PORT}`);
+    console.log(`Server accessible from all IPs on port ${PORT}`);
+  });
 }
 
 // Only start the server when this file is run directly
