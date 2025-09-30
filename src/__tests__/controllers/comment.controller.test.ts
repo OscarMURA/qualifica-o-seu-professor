@@ -220,4 +220,125 @@ describe('Comment Controller', () => {
       pages: 1
     });
   });
+
+  test('listComments - works without validatedQuery (fallback to req.query)', async () => {
+    const mockCountDocuments: any = jest.fn();
+    mockCountDocuments.mockResolvedValue(3);
+    const mockPopulate: any = jest.fn();
+    mockPopulate.mockResolvedValue([{ id: 'c3' }]);
+    const mockFind = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: mockPopulate
+    });
+
+    jest.doMock('../../models/comment.model', () => ({ 
+      CommentModel: { 
+        countDocuments: mockCountDocuments,
+        find: mockFind 
+      } 
+    }));
+
+    const { listComments } = await import('../../controllers/comment.controller');
+
+    // Test without validatedQuery - should use req.query
+    const req: any = { 
+      query: { 
+        professor: 'prof2', 
+        page: 1, 
+        limit: 5 
+      } 
+    };
+    const res: any = { json: jest.fn() };
+
+    await listComments(req, res);
+
+    expect(mockCountDocuments).toHaveBeenCalledWith({
+      professor: 'prof2'
+    });
+    expect(res.json).toHaveBeenCalledWith({
+      data: [{ id: 'c3' }],
+      page: 1,
+      limit: 5,
+      total: 3,
+      pages: 1
+    });
+  });
+
+  test('listComments - handles empty filters', async () => {
+    const mockCountDocuments: any = jest.fn();
+    mockCountDocuments.mockResolvedValue(10);
+    const mockPopulate: any = jest.fn();
+    mockPopulate.mockResolvedValue([{ id: 'c4' }, { id: 'c5' }]);
+    const mockFind = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: mockPopulate
+    });
+
+    jest.doMock('../../models/comment.model', () => ({ 
+      CommentModel: { 
+        countDocuments: mockCountDocuments,
+        find: mockFind 
+      } 
+    }));
+
+    const { listComments } = await import('../../controllers/comment.controller');
+
+    // Test with no filters - empty query
+    const req: any = { 
+      validatedQuery: {} 
+    };
+    const res: any = { json: jest.fn() };
+
+    await listComments(req, res);
+
+    expect(mockCountDocuments).toHaveBeenCalledWith({});
+    expect(res.json).toHaveBeenCalledWith({
+      data: [{ id: 'c4' }, { id: 'c5' }],
+      page: 1,
+      limit: 20,
+      total: 10,
+      pages: 1
+    });
+  });
+
+  test('listComments - handles undefined req.query fallback', async () => {
+    const mockCountDocuments: any = jest.fn();
+    mockCountDocuments.mockResolvedValue(2);
+    const mockPopulate: any = jest.fn();
+    mockPopulate.mockResolvedValue([{ id: 'c6' }]);
+    const mockFind = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: mockPopulate
+    });
+
+    jest.doMock('../../models/comment.model', () => ({ 
+      CommentModel: { 
+        countDocuments: mockCountDocuments,
+        find: mockFind 
+      } 
+    }));
+
+    const { listComments } = await import('../../controllers/comment.controller');
+
+    // Test with no validatedQuery and no req.query - should default to empty object
+    const req: any = {};
+    const res: any = { json: jest.fn() };
+
+    await listComments(req, res);
+
+    expect(mockCountDocuments).toHaveBeenCalledWith({});
+    expect(res.json).toHaveBeenCalledWith({
+      data: [{ id: 'c6' }],
+      page: 1,
+      limit: 20,
+      total: 2,
+      pages: 1
+    });
+  });
 });
