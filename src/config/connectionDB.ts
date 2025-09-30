@@ -13,13 +13,8 @@ export const connectDB = async () => {
     let uri = envUri || '';
 
     if (!uri) {
-      if (user && pass) {
-        // Build a URI with credentials (used when connecting to a local container with auth).
-        uri = `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${dbName}?authSource=admin`;
-      } else {
-        // No credentials available, connect without auth.
-        uri = `mongodb://${host}:${port}/${dbName}`;
-      }
+      // Connect without auth for local development
+      uri = `mongodb://${host}:${port}/${dbName}`;
     }
 
     // Validate scheme early to provide a clearer error than the driver.
