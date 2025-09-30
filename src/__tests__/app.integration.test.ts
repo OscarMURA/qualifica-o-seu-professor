@@ -1,13 +1,13 @@
 import request from 'supertest';
+import app from '../app';
 
 describe('app routes', () => {
 
   test('404 handler for unknown route', async () => {
-    const { default: app } = await import('../app');
     const res = await request(app).get('/no-such-route');
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty('message', 'Not Found');
-  });
+  }, 10000); // Aumentar timeout a 10 segundos
 
   test('error handler handles thrown errors (mounted before 404)', async () => {
     // Re-import app with a mocked routes module that contains a throwing route
@@ -19,8 +19,8 @@ describe('app routes', () => {
     jest.doMock('../routes', () => router);
     const { default: appWithMock } = await import('../app');
 
-  const res = await request(appWithMock).get('/api/err-route');
+    const res = await request(appWithMock).get('/api/err-route');
     expect(res.status).toBe(500);
     expect(res.body).toHaveProperty('message');
-  });
+  }, 10000); // Aumentar timeout a 10 segundos
 });

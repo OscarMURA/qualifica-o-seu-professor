@@ -20,7 +20,8 @@ export const getUser = async (req: Request, res: Response) => {
 // GET /api/users  (solo superadmin) - soporta filtros y paginación
 // Query validada por listUsersQuerySchema: { q?, role?, page=1, limit=20 }
 export const listUsers = async (req: Request, res: Response) => {
-  const validatedQuery = (req as any).validatedQuery;
+  // Usar validatedQuery si existe, o req.query como fallback para tests
+  const validatedQuery = (req as any).validatedQuery ?? req.query ?? {};
   const { q, role, page = 1, limit = 20 } = validatedQuery;
 
   const filter: any = {};

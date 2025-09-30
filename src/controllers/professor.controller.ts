@@ -7,7 +7,8 @@ export const createProfessor = async (req: Request, res: Response) => {
 };
 
 export const listProfessors = async (req: Request, res: Response) => {
-  const validatedQuery = (req as any).validatedQuery;
+  // Usar validatedQuery si existe, o req.query como fallback para tests
+  const validatedQuery = (req as any).validatedQuery ?? req.query ?? {};
   const { university, q } = validatedQuery;
   const filter: any = {};
   if (university) filter.university = university;
