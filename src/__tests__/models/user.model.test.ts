@@ -1,5 +1,5 @@
-import { UserModel, IUser } from "../../models/user.model";
 import bcrypt from "bcrypt";
+import { UserModel } from "../../models/user.model";
 
 // Mock bcrypt
 jest.mock("bcrypt");
@@ -54,5 +54,24 @@ describe("User Model - Basic Tests", () => {
 
     // Assert
     expect(result).toBe(false);
+  });
+
+  it("should transform user to JSON without passwordHash", () => {
+    // Arrange
+    const user = new UserModel({
+      name: "Test User",
+      email: "test@example.com",
+      passwordHash: "hashedPassword123",
+      role: "user"
+    });
+
+    // Act
+    const json = user.toJSON();
+
+    // Assert
+    expect(json.name).toBe("Test User");
+    expect(json.email).toBe("test@example.com");
+    expect(json.role).toBe("user");
+    expect(json.passwordHash).toBeUndefined();
   });
 });

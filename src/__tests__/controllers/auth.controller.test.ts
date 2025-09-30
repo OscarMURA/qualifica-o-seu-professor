@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
-import { registerCtrl, loginCtrl } from "../../controllers/auth.controller";
-import { UserModel } from "../../models/user.model";
 import bcrypt from "bcrypt";
+import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { loginCtrl, registerCtrl } from "../../controllers/auth.controller";
+import { UserModel } from "../../models/user.model";
 
 
 jest.mock("../../models/user.model");
@@ -136,6 +136,43 @@ describe("Auth Controller - Basic Tests", () => {
       // Assert
       expect(statusMock).toHaveBeenCalledWith(400);
       expect(jsonMock).toHaveBeenCalledWith({ message: "Invalid credentials" });
+    });
+  });
+
+  describe("meCtrl", () => {
+    it("should return user info from request", async () => {
+      // Arrange
+      req.user = {
+        sub: "userId123",
+        role: "user"
+      };
+
+      const { meCtrl } = await import("../../controllers/auth.controller");
+
+      // Act
+      await meCtrl(req as Request, res as Response);
+
+      // Assert
+      expect(jsonMock).toHaveBeenCalledWith({
+        sub: "userId123",
+        role: "user"
+      });
+    });
+
+    it("should handle undefined user", async () => {
+      // Arrange
+      req.user = undefined;
+
+      const { meCtrl } = await import("../../controllers/auth.controller");
+
+      // Act
+      await meCtrl(req as Request, res as Response);
+
+      // Assert
+      expect(jsonMock).toHaveBeenCalledWith({
+        sub: undefined,
+        role: undefined
+      });
     });
   });
 });

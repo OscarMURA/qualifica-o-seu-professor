@@ -122,4 +122,102 @@ describe('Comment Controller', () => {
     await del({ params: { id: 'ok' }, user: { sub: 'owner' } } as any, resDelOk as any);
     expect(resDelOk.status).toHaveBeenCalledWith(204);
   });
+
+  test('updateComment - admin can edit any comment', async () => {
+    const fakeComment: any = {
+      user: { toString: () => 'other' },
+      save: jest.fn(),
+      populate: jest.fn(),
+    };
+    (fakeComment.save as any).mockResolvedValue(undefined);
+    (fakeComment.populate as any).mockResolvedValue({ id: 'c3', content: 'edited by admin' });
+
+    const mockFindById: any = jest.fn();
+    mockFindById.mockResolvedValue(fakeComment);
+    jest.doMock('../../models/comment.model', () => ({ CommentModel: { findById: mockFindById } }));
+
+    const { updateComment } = await import('../../controllers/comment.controller');
+
+    const resOk: any = { json: jest.fn() };
+    await updateComment({ 
+      params: { id: 'ok' }, 
+      body: { content: 'edited by admin' }, 
+      user: { sub: 'admin', role: 'superadmin' } 
+    } as any, resOk as any);
+    
+    expect(fakeComment.content).toBe('edited by admin');
+    expect(resOk.json).toHaveBeenCalledWith({ id: 'c3', content: 'edited by admin' });
+  });
+
+  test('deleteComment - admin can delete any comment', async () => {
+    const fakeComment: any = {
+      user: { toString: () => 'other' },
+      deleteOne: jest.fn(),
+    };
+    (fakeComment.deleteOne as any).mockResolvedValue(undefined);
+
+    const mockFindById: any = jest.fn();
+    mockFindById.mockResolvedValue(fakeComment);
+    jest.doMock('../../models/comment.model', () => ({ CommentModel: { findById: mockFindById } }));
+
+    const { deleteComment } = await import('../../controllers/comment.controller');
+
+    const resOk: any = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+    await deleteComment({ 
+      params: { id: 'ok' }, 
+      user: { sub: 'admin', role: 'superadmin' } 
+    } as any, resOk as any);
+    
+    expect(resOk.status).toHaveBeenCalledWith(204);
+    expect(fakeComment.deleteOne).toHaveBeenCalled();
+  });
+
+  test('listComments - handles query parameters and filters', async () => {
+    const mockCountDocuments: any = jest.fn();
+    mockCountDocuments.mockResolvedValue(5);
+    const mockPopulate: any = jest.fn();
+    mockPopulate.mockResolvedValue([{ id: 'c1' }, { id: 'c2' }]);
+    const mockFind = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: mockPopulate
+    });
+
+    jest.doMock('../../models/comment.model', () => ({ 
+      CommentModel: { 
+        countDocuments: mockCountDocuments,
+        find: mockFind 
+      } 
+    }));
+
+    const { listComments } = await import('../../controllers/comment.controller');
+
+    // Test with filters
+    const req: any = { 
+      validatedQuery: { 
+        professor: 'prof1', 
+        user: 'user1', 
+        q: 'search', 
+        page: 2, 
+        limit: 10 
+      } 
+    };
+    const res: any = { json: jest.fn() };
+
+    await listComments(req, res);
+
+    expect(mockCountDocuments).toHaveBeenCalledWith({
+      professor: 'prof1',
+      user: 'user1',
+      content: { $regex: 'search', $options: 'i' }
+    });
+    expect(res.json).toHaveBeenCalledWith({
+      data: [{ id: 'c1' }, { id: 'c2' }],
+      page: 2,
+      limit: 10,
+      total: 5,
+      pages: 1
+    });
+  });
 });

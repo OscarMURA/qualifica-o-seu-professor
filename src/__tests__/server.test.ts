@@ -46,4 +46,24 @@ describe('entry: src/server.ts', () => {
 
     consoleSpy.mockRestore();
   });
+
+  it('uses port parameter when provided', async () => {
+    const mockConnectDB = jest.fn().mockResolvedValue(undefined);
+    const mockListen = jest.fn((port: number, cb?: () => void) => cb && cb());
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    jest.resetModules();
+    jest.doMock('dotenv', () => ({ config: jest.fn() }));
+    jest.doMock('../app', () => ({ __esModule: true, default: { listen: mockListen } }));
+    jest.doMock('../config/connectionDB', () => ({ connectDB: mockConnectDB }));
+
+    const { startServer } = await import('../server');
+    await startServer(8080);
+
+    expect(mockConnectDB).toHaveBeenCalled();
+    expect(mockListen).toHaveBeenCalledWith(8080, expect.any(Function));
+    expect(consoleSpy).toHaveBeenCalledWith('API up on :8080');
+
+    consoleSpy.mockRestore();
+  });
 });

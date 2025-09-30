@@ -26,4 +26,29 @@ describe('connectDB', () => {
       );
     });
   });
+
+  it('should throw error for invalid URI scheme', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+      throw new Error(`Process exit called with code ${code}`);
+    });
+
+    process.env.MONGODB_URI = 'invalid://localhost:27017/testdb';
+
+    const { connectDB } = await import('../../config/connectionDB');
+    
+    try {
+      await connectDB();
+    } catch (error) {
+      // Expected error from mocked process.exit
+    }
+
+    expect(consoleSpy).toHaveBeenCalledWith('Error connecting to MongoDB:', expect.any(Error));
+    expect(mockExit).toHaveBeenCalledWith(1);
+
+    consoleSpy.mockRestore();
+    mockExit.mockRestore();
+  });
+
+
 });
