@@ -1,12 +1,12 @@
+import { faker } from '@faker-js/faker';
+import bcrypt from 'bcrypt';
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
-import { faker } from '@faker-js/faker';
-import { UserModel } from '../models/user.model';
-import { UniversityModel } from '../models/university.model';
+import { CommentModel } from '../models/comment.model';
 import { ProfessorModel } from '../models/professor.model';
 import Student from '../models/student.model';
-import { CommentModel } from '../models/comment.model';
+import { UniversityModel } from '../models/university.model';
+import { UserModel } from '../models/user.model';
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -27,7 +27,10 @@ async function main() {
   await mongoose.connect(uri, { dbName });
   console.log(`SEED: Conectado a MongoDB (db: ${dbName})`);
 
-  const reset = process.env.SEED_RESET !== 'false';
+  // Modo seguro: solo crea datos si no existen
+  const safeMode = process.argv.includes('--safe') || process.env.NODE_ENV === 'production';
+  const reset = !safeMode && process.env.SEED_RESET !== 'false';
+  
   const counts = {
     users: Number(process.env.SEED_USERS ?? 150),
     universities: Number(process.env.SEED_UNIVERSITIES ?? 120),
@@ -35,6 +38,17 @@ async function main() {
     students: Number(process.env.SEED_STUDENTS ?? 150),
     comments: Number(process.env.SEED_COMMENTS ?? 500),
   };
+
+  // En modo seguro, solo crear si no hay datos
+  if (safeMode) {
+    const existingUsers = await UserModel.countDocuments();
+    if (existingUsers > 0) {
+      console.log('SEED: Modo seguro - ya existen datos, omitiendo seed');
+      await mongoose.connection.close();
+      return;
+    }
+    console.log('SEED: Modo seguro - creando datos iniciales...');
+  }
 
   if (reset) {
     console.log('SEED: Limpiando colecciones...');
