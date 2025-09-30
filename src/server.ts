@@ -6,7 +6,8 @@ dotenv.config();
 
 export async function startServer(port?: number) {
   await connectDB();
-  const PORT = port || process.env.PORT || 3000;
+  const rawPort = port ?? process.env.PORT ?? 3000;
+  const PORT = typeof rawPort === 'string' ? parseInt(rawPort, 10) : rawPort;
   const HOST = process.env.HOST || '0.0.0.0';
   
   app.listen(PORT, HOST, () => {
