@@ -9,12 +9,19 @@ export const myProfile = async (req: Request, res: Response) => {
   res.json(me);
 };
 
+// GET /api/users/:id (solo superadmin)
+export const getUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = await UserModel.findById(id).select('-passwordHash');
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json(user);
+};
+
 // GET /api/users  (solo superadmin) - soporta filtros y paginación
 // Query validada por listUsersQuerySchema: { q?, role?, page=1, limit=20 }
 export const listUsers = async (req: Request, res: Response) => {
-  const { q, role } = req.query as { q?: string; role?: 'superadmin' | 'user' };
-  const page = Number((req.query as any).page ?? 1);
-  const limit = Number((req.query as any).limit ?? 20);
+  const validatedQuery = (req as any).validatedQuery;
+  const { q, role, page = 1, limit = 20 } = validatedQuery;
 
   const filter: any = {};
   if (q) {

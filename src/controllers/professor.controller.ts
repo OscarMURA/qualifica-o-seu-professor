@@ -7,7 +7,8 @@ export const createProfessor = async (req: Request, res: Response) => {
 };
 
 export const listProfessors = async (req: Request, res: Response) => {
-  const { university, q } = req.query as { university?: string; q?: string };
+  const validatedQuery = (req as any).validatedQuery;
+  const { university, q } = validatedQuery;
   const filter: any = {};
   if (university) filter.university = university;
   if (q) filter.name = { $regex: q, $options: 'i' };

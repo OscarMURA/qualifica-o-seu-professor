@@ -13,6 +13,7 @@ r.get('/:id', validate(idParamSchema, 'params'), getUniversity);
 
 // CRUD solo superadmin
 r.post('/', requireAuth, requireRole('superadmin'), validate(createUniversitySchema), createUniversity);
+r.put('/:id', requireAuth, requireRole('superadmin'), validate(idParamSchema, 'params'), validate(updateUniversitySchema), updateUniversity);
 r.patch('/:id', requireAuth, requireRole('superadmin'), validate(idParamSchema, 'params'), validate(updateUniversitySchema), updateUniversity);
 r.delete('/:id', requireAuth, requireRole('superadmin'), validate(idParamSchema, 'params'), deleteUniversity);
 

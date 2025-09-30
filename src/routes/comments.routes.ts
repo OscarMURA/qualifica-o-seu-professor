@@ -12,6 +12,7 @@ r.get('/:id', validate(idParamSchema, 'params'), getComment);
 
 // Operaciones que requieren autenticación
 r.post('/', requireAuth, validate(createCommentSchema), createComment);
+r.put('/:id', requireAuth, validate(idParamSchema, 'params'), validate(updateCommentSchema), updateComment);
 r.patch('/:id', requireAuth, validate(idParamSchema, 'params'), validate(updateCommentSchema), updateComment);
 r.delete('/:id', requireAuth, validate(idParamSchema, 'params'), deleteComment);
 

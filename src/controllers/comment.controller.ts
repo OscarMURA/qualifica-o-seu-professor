@@ -21,9 +21,8 @@ export const createComment = async (req: Request, res: Response) => {
 
 // GET /api/comments - lista pública con filtros/paginación
 export const listComments = async (req: Request, res: Response) => {
-  const { professor, user, q } = req.query as { professor?: string; user?: string; q?: string };
-  const page = Number((req.query as any).page ?? 1);
-  const limit = Number((req.query as any).limit ?? 20);
+  const validatedQuery = (req as any).validatedQuery;
+  const { professor, user, q, page = 1, limit = 20 } = validatedQuery;
 
   const filter: any = {};
   if (professor) filter.professor = professor;

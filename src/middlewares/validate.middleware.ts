@@ -9,7 +9,14 @@ export function validate(schema: ZodSchema<any>, where: 'body'|'params'|'query' 
       const issues = result.error.issues.map(i => ({ path: i.path, message: i.message }));
       return res.status(400).json({ message: 'Validation error', issues });
     }
-    (req as any)[where] = result.data;
+    
+    
+    if (where === 'body' || where === 'params') {
+      (req as any)[where] = result.data;
+    } else if (where === 'query') {
+      (req as any).validatedQuery = result.data;
+    }
+    
     next();
   };
 }

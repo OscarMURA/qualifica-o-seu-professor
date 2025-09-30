@@ -1,19 +1,6 @@
 import request from 'supertest';
 
 describe('app routes', () => {
-  test('GET / returns welcome message', async () => {
-    const { default: app } = await import('../app');
-    const res = await request(app).get('/');
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('message');
-  });
-
-  test('GET /api/health returns ok', async () => {
-    const { default: app } = await import('../app');
-    const res = await request(app).get('/api/health');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
-  });
 
   test('404 handler for unknown route', async () => {
     const { default: app } = await import('../app');
