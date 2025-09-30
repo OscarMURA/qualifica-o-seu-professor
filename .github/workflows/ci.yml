@@ -13,13 +13,11 @@ jobs:
 
     env:
       NODE_VERSION: '20.x'
-      # Primero Secrets (incluye fallback a nombre mal tipeado), luego Vars, luego defaults
+
       MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME || vars.MONGO_INITDB_ROOT_USERNAME || 'qualifica' }}
       MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD || secrets.MONGO_INITDB_ROOT_PASSWOD || vars.MONGO_INITDB_ROOT_PASSWORD || 'qualifica' }}
       MONGO_INITDB_DATABASE:       ${{ secrets.MONGO_INITDB_DATABASE       || vars.MONGO_INITDB_DATABASE       || 'qualifica-professor' }}
-      # Puerto de la app
       PORT: 3000
-      # JWT para la app (valor simple para CI)
       JWT_SECRET: ci-secret
 
     steps:
@@ -64,8 +62,37 @@ jobs:
           docker ps -a
           docker compose ps
 
-      - name: Run tests (pass even if none)
-        run: npm test
+      - name: Seed database (small, deterministic)
+        env:
+          SEED_RESET: 'true'
+          SEED_USERS: '2'
+          SEED_UNIVERSITIES: '2'
+          SEED_PROFESSORS: '2'
+          SEED_STUDENTS: '2'
+          SEED_COMMENTS: '2'
+          FAKER_SEED: '1'
+        run: |
+          node dist/scripts/seed.js
+
+      - name: Detectar si hay pruebas
+        id: has_tests
+        run: |
+          COUNT=$(git --no-pager ls-files | grep -E -c "(^|/)(__tests__/.*\.(ts|js)$|.*\.(test|spec)\.(ts|js)$)" || true)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "HAS_TESTS=true" >> $GITHUB_ENV
+            echo "Se detectaron $COUNT archivos de prueba"
+          else
+            echo "HAS_TESTS=false" >> $GITHUB_ENV
+            echo "No se detectaron archivos de prueba"
+          fi
+
+      - name: Run tests with coverage (threshold 81%)
+        run: |
+          if [ "${HAS_TESTS}" = "true" ]; then
+            npm run test:cov
+          else
+            echo "No hay pruebas; se aprueba este paso sin ejecutar cobertura (compatibilidad pedida)."
+          fi
 
       - name: Start application (background)
         run: |
@@ -85,6 +112,27 @@ jobs:
           body=$(curl -fsS "http://localhost:${PORT}/api/health")
           echo "Respuesta: $body"
           echo "$body" | grep -q '"ok"\s*:\s*true' || { echo "Smoke test falló: respuesta inesperada" >&2; exit 1; }
+
+      - name: Install Newman (Postman CLI)
+        run: npm i -g newman
+
+      - name: Run Postman collection (integration tests)
+        run: |
+          newman run apiExpress.postman_collection.json \
+            --reporters cli \
+            --timeout-request 15000 \
+            --delay-request 100
+
+      - name: Publicar cobertura como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/lcov-report
+            coverage/lcov.info
+            coverage/coverage-final.json
+          if-no-files-found: ignore
 
       - name: App logs on failure
         if: failure()
