@@ -39,7 +39,6 @@ describe("Auth Middleware - Basic Tests", () => {
     requireAuth(req as Request, res as Response, next);
 
     // Assert
-    // Use the actual JWT_SECRET that the middleware uses (process.env.JWT_SECRET || 'change-me')
     const expectedSecret = process.env.JWT_SECRET || "change-me";
     expect(mockJwt.verify).toHaveBeenCalledWith("validtoken123", expectedSecret);
     expect(req.user).toEqual(mockPayload);
